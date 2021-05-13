@@ -1,10 +1,11 @@
 from tkinter import *
 import json
+import numpy
 import re
 import urllib.request
 from PIL import Image, ImageTk
 from compare_images import get_image_hash, compare_hash
-from image_traits import post_photo, get_paintings, download_photo, find_similar
+from image_traits import post_photo, get_paintings, download_photo, DOWNLOADING_QUANTITY
 
 
 def download_list(source_list, target_file):
@@ -15,10 +16,7 @@ def download_list(source_list, target_file):
     :return:
     """
     for i in range(len(source_list)):
-        try:
-            download_photo(source_list[i].read(), target_file.format(i))
-        except:
-            pass
+        download_photo(source_list[i].read(), target_file.format(i))
 
 
 def find_similar(list1, list2, screen):
@@ -32,18 +30,15 @@ def find_similar(list1, list2, screen):
     download_list(list1, "img1_{}.jpg")
     download_list(list2, "img2_{}.jpg")
 
-    compare_matrix = [[0]*len(list2)]*len(list1)
-    i_min = 0
-    j_min = 0
-    min_value = 100
-    for i in range(len(list1)):
-        for j in range(len(list2)):
-            compare_matrix[i][j] = compare_hash(get_image_hash("img1_{}.jpg".format(i)),
-                                                get_image_hash("img2_{}.jpg".format(j)))
-            if compare_matrix[i][j] < min_value:
-                i_min = i
-                j_min = j
-                min_value = compare_matrix[i][j]
+    img_list1 = ["img1_{}.jpg".format(i) for i in range(DOWNLOADING_QUANTITY)]
+    img_list2 = ["img2_{}.jpg".format(i) for i in range(DOWNLOADING_QUANTITY)]
+
+    compare_matrix = [list(map(lambda x:compare_hash(get_image_hash(image), get_image_hash(x)), img_list1))
+                      for image in img_list2]
+
+    compare_index = list(enumerate([list(enumerate(row)) for row in compare_matrix]))
+    i_min = min(compare_index, key=lambda row: min(row[1], key=lambda pos: pos[1]))[0]
+    j_min = min(compare_index[i_min][1], key=lambda pos: pos[1])[0]
 
     post_photo("img1_{}.jpg".format(i_min), 30, 200, screen)
     post_photo("img2_{}.jpg".format(j_min), 430, 200, screen)
