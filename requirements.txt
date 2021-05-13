@@ -1,5 +1,4 @@
-re
-urllib.request
-PIL
+urllib3
+Pillow
 cv
-unittest
+opencv-python
